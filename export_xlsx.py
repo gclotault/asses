@@ -173,8 +173,8 @@ def generate_fichier(data):
             # Configure the first series.
             chart5.add_series({
                               'name':       utility,
-                              'categories': '=' + monAttribut['name'] + '!$G$' + str(ligne + 2) + ':$G$' + str(ligne + 12),
-                              'values':     '=' + monAttribut['name'] + '!$H$' + str(ligne + 2) + ':$H$' + str(ligne + 12),
+                              'categories': '=\'' + monAttribut['name'] + '\'' + '!$G$' + str(ligne + 2) + ':$G$' + str(ligne + 12),
+                              'values':     '=\'' + monAttribut['name'] + '\'' + '!$H$' + str(ligne + 2) + ':$H$' + str(ligne + 12),
 
                               })
 
