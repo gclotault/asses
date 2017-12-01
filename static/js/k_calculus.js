@@ -609,7 +609,7 @@ function k_answer(i, type)
 		if (method == 'PE') {
 			(function(){
 
-				var probability = random_proba(0.25, 0.75),
+				var probability = 0.75, //random_proba(0.25, 0.75),
 					min_interval = 0,
 					max_interval = 1;
 
@@ -618,16 +618,19 @@ function k_answer(i, type)
 					len = asses_session.k_calculus[type].k.length;
 
 				for (var l=0; l < len; l++) {
-					var attrib = asses_session.attributes[asses_session.k_calculus[type].k[l].ID_attribute];
+					var attrib = asses_session.attributes[asses_session.k_calculus[type].k[l].ID_attribute]
+						attrib_favorite = (attrib.mode=="normal"? attrib.val_max : attrib.val_min),
+						attrib_other = (attrib.mode=="normal"? attrib.val_min : attrib.val_max);
+						
 					if (attrib.name == name) {
-						gain_certain += String(attrib.name).toUpperCase() + ' : ' + (attrib.mode=="normal"? attrib.val_max : attrib.val_min) + ' ' + attrib.unit + (l==len-1?'':'<br/>');
-						gain_haut += String(attrib.name).toUpperCase() + ' : ' + (attrib.mode=="normal"? attrib.val_max : attrib.val_min) + ' ' + attrib.unit + (l==len-1?'':'<br/>');
-						gain_bas += String(attrib.name).toUpperCase() + ' : ' + (attrib.mode=="normal"? attrib.val_min : attrib.val_max) + ' ' + attrib.unit + (l==len-1?'':'<br/>');
+						gain_certain += String(attrib.name).toUpperCase() + ' : ' + attrib_favorite + ' ' + attrib.unit + (l==len-1?'':'<br/>');
 					} else {
-						gain_certain += String(attrib.name) + ' : ' + (attrib.mode=="normal"? attrib.val_min : attrib.val_max) + ' ' + attrib.unit + (l==len-1?'':'<br/>');
-						gain_haut += String(attrib.name) + ' : ' + (attrib.mode=="normal"? attrib.val_max : attrib.val_min) + ' ' + attrib.unit + (l==len-1?'':'<br/>');
-						gain_bas += String(attrib.name) + ' : ' + (attrib.mode=="normal"? attrib.val_min : attrib.val_max) + ' ' + attrib.unit + (l==len-1?'':'<br/>');
-					};	
+						gain_certain += String(attrib.name).toLowerCase() + ' : ' + attrib_other + ' ' + attrib.unit + (l==len-1?'':'<br/>');
+					};
+					
+					gain_haut += String(attrib.name).toUpperCase() + ' : ' + attrib_favorite + ' ' + attrib.unit + (l==len-1?'':'<br/>');
+					gain_bas += String(attrib.name).toLowerCase() + ' : ' + attrib_other + ' ' + attrib.unit + (l==len-1?'':'<br/>');
+						
 				}
 
 				// INTERFACE
@@ -701,13 +704,13 @@ function k_answer(i, type)
 
 				// HANDLE USERS ACTIONS
 				$('.gain').click(function() {
-					$.post('ajax', '{"type":"question", "method": "PE", "proba": '+ String(probability) + ', "min_interval": '+ min_interval+ ', "max_interval": '+ max_interval+' ,"choice": "0", "mode": "'+String(mode)+'"}', function(data) {
+					$.post('ajax', '{"type":"question", "method": "PE", "proba": '+ String(probability) + ', "min_interval": '+ min_interval+ ', "max_interval": '+ max_interval+' ,"choice": "0", "mode": "'+"normal"+'"}', function(data) {
 						treat_answer(data);
 					});
 				});
 
 				$('.lottery').click(function() {
-					$.post('ajax', '{"type":"question","method": "PE", "proba": '+ String(probability) + ', "min_interval": '+ min_interval+ ', "max_interval": '+ max_interval+' ,"choice": "1" , "mode": "'+String(mode)+'"}', function(data) {
+					$.post('ajax', '{"type":"question","method": "PE", "proba": '+ String(probability) + ', "min_interval": '+ min_interval+ ', "max_interval": '+ max_interval+' ,"choice": "1" , "mode": "'+"normal"+'"}', function(data) {
 						treat_answer(data);
 					});
 				});
