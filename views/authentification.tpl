@@ -16,15 +16,15 @@
 
 <div class="form-inline">
   <div class="form-group">
-    <input type="text" class="form-control" id="password" placeholder="password">
+    <input type="text" class="form-control" id="password" placeholder="Password">
   </div>
-  <button id="connect" class="btn btn-default">Connect !</button>
+  <button id="connect" class="btn btn-default">Connect</button>
 
 
 </div>
 <br/><br/>
 <div class="alert alert-info" role="alert" id="info_admin" >
-      let the input box blank in order to delete the password
+      Let the input box blank in order to delete the password
 </div>
 
 <div id="admin" >
@@ -33,15 +33,15 @@
 
     </div>
     <br/>
-    <button id="add" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>  add passwd</button>
+    <button id="add" class="btn btn-default"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span>Add password</button>
     <br/><br/>
-    <button id="save" class="btn btn-default">save</button>
+    <button id="save" class="btn btn-default">Save</button>
     <br/><br/>
     <div class="alert alert-success" role="alert" id="success_save" >
-          passwords are saved !
+          Passwords have been saved !
     </div>
     <div class="alert alert-danger" role="alert" id="fail_save" >
-              passwords was not saved ! You are not administrator. Please check your password !
+              Passwords have not been saved ! You are not administrator. Please check your password !
         </div>
    </div>
 
@@ -70,6 +70,14 @@ $("#connect").click(function(){
     $.post('auth', JSON.stringify({"type":"authentification","mdp":$("#password").val()}), function (data) {
         retour(data);
     });
+});
+
+$("#password").keypress(function(event){
+	if (event.which == 13) {
+		$.post('auth', JSON.stringify({"type":"authentification","mdp":$("#password").val()}), function (data) {
+			retour(data);
+		});
+	};
 });
 
 var mdps=[];
@@ -134,7 +142,7 @@ $("#add").click(function(){
     mdps.push("new passwd");
     for(var i=0; i<mdps.length; i++)
     {
-        $("#admin_mdps").append('<br/><input type="text" class="form-control" id="mdp'+i+'" placeholder="blank - this passwd will be deleted" value="'+mdps[i]+'">');
+        $("#admin_mdps").append('<br/><input type="text" class="form-control" id="mdp'+i+'" placeholder="blank - this password will be deleted" value="'+mdps[i]+'">');
     }
 });
 
