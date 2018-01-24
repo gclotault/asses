@@ -104,6 +104,19 @@ def credits():
         return template('authentification', get_url=app.get_url)
     return {'get_url':  app.get_url}
 
+@app.route('/qualitative')
+@view('qualitative')
+def qualitative():
+    if check_passwd(request.get_cookie("mdp")) == False:
+        return template('authentification', get_url=app.get_url)
+    return {'get_url':  app.get_url}
+
+@app.route('/words')
+@view('words')
+def words():
+    if check_passwd(request.get_cookie("mdp")) == False:
+        return template('authentification', get_url=app.get_url)
+    return {'get_url':  app.get_url}
 
 @app.route('/ajax', method="POST")
 def ajax():
