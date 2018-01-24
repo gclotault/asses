@@ -46,6 +46,7 @@
 <script>
     $(function() {
         $("#settings_modified").hide();
+		$('li.settings').addClass("active");
 
         var asses_session = JSON.parse(localStorage.getItem("asses_session"));
 

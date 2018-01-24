@@ -17,7 +17,7 @@
 
 %include('js.tpl')
 
-
+<script>$('li.import').addClass("active");</script>
 
 
 </body>

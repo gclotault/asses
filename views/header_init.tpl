@@ -9,7 +9,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>ASSESS</title>
+    <title>ASSESS THIBAUT</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="{{ get_url('static', path='css/bootstrap.min.css') }}" rel="stylesheet">
@@ -43,7 +43,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="/attributes">ASSESS</a>
+                <a class="navbar-brand" href="/attributes">ASSESS THIBAUT</a>
             </div>
             <!-- Top Menu Items -->
 
@@ -71,8 +71,14 @@
                     <li class="credits">
                         <a href="{{ get_url('/credits') }}"><i class="fa fa-fw fa-users"></i>Credits</a>
                     </li>
-                </ul>
-            </div>
+					<li class="manage_quali">
+                        <a href="{{ get_url('/qualitative') }}"><i class="fa fa-fw fa-file"></i>Qualitative - Manage attributes</a>
+                    </li>
+                    <li class="questions_quali">
+                        <a href="{{ get_url('/words') }}"><i class="fa fa-fw fa-file"></i>Qualitative - Utility assessment</a>
+                    </li>
+				</ul>
+			</div>
             <!-- /.navbar-collapse -->
         </nav>
 
@@ -89,3 +95,6 @@
                 </div>
             </div>
             <!-- /.row -->
+
+			
+			

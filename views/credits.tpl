@@ -43,5 +43,13 @@ var d="";for(var i=0;i<505;i++)d+=String.fromCharCode(("*t&3(P5IZW}XEF[$T={dGH.+
 </script></li>
 </ul>
 
+<script type="text/javascript">$('li.credits').addClass("active");</script>
+
 %include('header_end.tpl')
 %include('js.tpl')
+
+<!-- Library to copy into clipboard -->
+<script src="{{ get_url('static', path='js/clipboard.min.js') }}"></script>
+</body>
+
+</html>

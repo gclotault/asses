@@ -71,7 +71,7 @@
             if (confirm("Are you sure ?") == false) {
                 return
             };
-            localStorage.clear();
+            localStorage.removeItem("asses_session");
             window.location.reload();
         });
         $('li.manage').addClass("active");
