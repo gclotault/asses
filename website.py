@@ -104,16 +104,17 @@ def credits():
         return template('authentification', get_url=app.get_url)
     return {'get_url':  app.get_url}
 
-@app.route('/qualitative')
-@view('qualitative')
-def qualitative():
-    if check_passwd(request.get_cookie("mdp")) == False:
-        return template('authentification', get_url=app.get_url)
-    return {'get_url':  app.get_url}
-
+# Test qualitative attributes
 @app.route('/words')
 @view('words')
 def words():
+    if check_passwd(request.get_cookie("mdp")) == False:
+        return template('authentification', get_url=app.get_url)
+    return {'get_url':  app.get_url}
+	
+@app.route('/qualitative')
+@view('qualitative')
+def qualitative():
     if check_passwd(request.get_cookie("mdp")) == False:
         return template('authentification', get_url=app.get_url)
     return {'get_url':  app.get_url}
@@ -165,6 +166,12 @@ def ajax():
         liste_cord = query['liste_cord']
         width = query['width']
         return plot.generate_svg_plot(dictionary, min, max, liste_cord, width)
+	
+    elif query['type'] == "svg_QUALI":
+        dictionary = query['data']
+        list_names = query['list_names']
+        width = query['width']
+        return plot.generate_svg_plot_QUALI(dictionary, list_names, width)
 
     elif query['type'] == "pie_chart":
         names = query['names']

@@ -99,3 +99,26 @@ def pie_chart(names, probas):
     plt.close()
 
     return imgdata.getvalue()
+
+def generate_svg_plot_QUALI(dictionary, list_names, width):
+
+	# img
+	imgdata = io.BytesIO()
+
+	# Open a new figure with the right width
+	plt.figure(figsize=(width, width))
+	
+	graph_x = list(range(len(dictionary)))
+	graph_y = dictionary
+	
+	plt.figure(1)
+	plt.plot(graph_x, graph_y, 'r')
+	plt.plot([0, graph_x[-1]], [0, 1], 'k')
+	plt.axis([0, graph_x[-1], 0, 1])
+	plt.grid()
+	plt.xticks(graph_x, list_names)
+
+	plt.savefig(imgdata, format='svg')
+	plt.close()
+
+	return imgdata.getvalue()
