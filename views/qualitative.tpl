@@ -34,7 +34,7 @@
 
     <div class="form-group">
         <label for="att_value_worst">Least prefered value:</label>
-        <input type="text" class="form-control" id="att_value_worst" placeholder="Value">
+        <input type="text" class="form-control" id="att_value_worst" placeholder="Worst value">
     </div>
 	
 	<div class="form-group">
@@ -48,7 +48,7 @@
 	
     <div class="form-group">
         <label for="att_value_best">Most prefered value:</label>
-        <input type="text" class="form-control" id="att_value_best" placeholder="Value">
+        <input type="text" class="form-control" id="att_value_best" placeholder="Best value">
     </div>
 	
     <div class="form-group">
@@ -91,7 +91,7 @@ del_value_med.addEventListener('click', function() {
 	if (longueur!=1){
 		lists[longueur-1].parentNode.removeChild(lists[longueur-1]);
 	} else {
-		alert("Please put at lease one medium value for the attribute "+$('#att_name').val());
+		alert("Please put at least one medium value for the attribute "+$('#att_name').val());
 	};
 });
 
@@ -313,7 +313,7 @@ del_value_med.addEventListener('click', function() {
 						'checked': true,
 						'questionnaire': {
 							'number': 0,
-							'points': [],
+							'points': {},//{'val_worst' : [0, -1], 'val_best' : [1, -2]},
 							'utility': {}
 						}
 					});
@@ -329,7 +329,7 @@ del_value_med.addEventListener('click', function() {
 							'checked': true,
 							'questionnaire': {
 								'number': 0,
-								'points': [],
+								'points': {},
 								'utility': {}
 							}
 						};
