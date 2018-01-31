@@ -37,7 +37,7 @@
     console.log("test");
     console.log(JSON.parse(data));
     $("#import_ok").show();
-    localStorage.setItem("asses_session", data);
+    localStorage.setItem("assess_session", data);
   }
   else
   {

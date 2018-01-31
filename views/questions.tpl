@@ -6,10 +6,11 @@
 		<thead>
 			<tr>
 				<th>Attribute</th>
+				<th>Type</th>
 				<th>Method</th>
 				<th>Number of assessed points</th>
 				<th>Assess another point</th>
-				<th>Calculate utility function</th>
+				<th>Display utility graph</th>
 				<th>Reset assessements</th>
 			</tr>
 		</thead>
@@ -45,44 +46,54 @@
 		$('#main_graph').hide();
 		$('#functions').hide();
 
-		var asses_session = JSON.parse(localStorage.getItem("asses_session"));
-		var settings=asses_session.settings;
+		var assess_session = JSON.parse(localStorage.getItem("assess_session")),
+			settings = assess_session.settings;
 
-		// We fill the table
-		for (var i = 0; i < asses_session.attributes.length; i++) {
-			if (!asses_session.attributes[i].checked) //if note activated
-				continue; //we pass to the next one
-			var text = '<tr><td>' + asses_session.attributes[i].name + '</td><td>' + asses_session.attributes[i].method + '</td><td>' + asses_session.attributes[i].questionnaire.number + '</td>';
+		// We fill the table of the existing attributes and assessments
+		for (var i = 0; i < assess_session.attributes.length; i++) {
+			if (!assess_session.attributes[i].checked) //if this attribute is not activated
+				continue; //we skip this attribute and go to the next one
+				
+			var attribute = assess_session.attributes[i],
+				text_table = '<tr><td>' + attribute.name + '</td>'+
+							 '<td>' + attribute.type + '</td>'+
+							 '<td>' + attribute.method + '</td>'+
+							 '<td>' + attribute.questionnaire.number + '</td>';
+							
+			text_table += '<td><table style="width:100%"><tr><td>' + attribute.val_min + '</td><td> : </td><td>0</td></tr>';
+			for (var ii=0, len=attribute.val_med.length; ii<len; ii++){
+				text_table += '<tr><td>' + attribute.val_med[ii] + '</td><td> : </td>'; 
+				if(attribute.questionnaire.points[attribute.val_med[ii]]){
+					text_table += '<td>' + attribute.questionnaire.points[attribute.val_med[ii]] + '</td>';
+				} else {
+					text_table += '<td><button type="button" class="btn btn-default btn-xs answer_quest" id="q_' + attribute.name + '_' + attribute.val_med[ii] + '_' + ii + '">Assess</button>' + '</td></tr>';
+				};
+			}; 
+			text_table += '<tr><td>' + attribute.val_max + '</td><td> : </td><td>1</td></tr></table></td>';
 
-			if (asses_session.attributes[i].questionnaire.number !== 3) {
-				text += '<td><button type="button" class="btn btn-default btn-xs answer_quest" id="q_' + asses_session.attributes[i].name + '">Assess</button></td>';
+			if (attribute.questionnaire.number > 0) {
+				text_table += '<td><button type="button" class="btn btn-default btn-xs calc_util" id="u_' + attribute.name + '">Utility function</button></td><td><button type="button" id="deleteK' + i + '" class="btn btn-default btn-xs">Reset</button></td>';
 			} else {
-				text += '<td>Three points max</td>';
+				text_table += '<td>No assessment yet</td>';
 			}
 
-			if (asses_session.attributes[i].questionnaire.number > 0) {
-				text += '<td><button type="button" class="btn btn-default btn-xs calc_util" id="u_' + asses_session.attributes[i].name + '">Utility function</button></td><td><button type="button" id="deleteK' + i + '" class="btn btn-default btn-xs">Reset</button></td>';
-			} else {
-				text += '<td>No assessment yet</td>';
-			}
-
-			$('#table_attributes').append(text);
+			$('#table_attributes').append(text_table);
 
 			(function(_i) {
-					$('#deleteK' + _i).click(function() {
-							if (confirm("Are you sure ?") == false) {
-									return
-							};
-							asses_session.attributes[_i].questionnaire = {
-									'number': 0,
-									'points': [],
-									'utility': {}
-							};
-							// backup local
-							localStorage.setItem("asses_session", JSON.stringify(asses_session));
-							//refresh the page
-							window.location.reload();
-					});
+				$('#deleteK' + _i).click(function() {
+					if (confirm("Are you sure you want to delete all the assessments for "+assess_session.attributes[_i].name+"?") == false) {
+							return
+					};
+					assess_session.attributes[_i].questionnaire = {
+							'number': 0,
+							'points': {},
+							'utility': {}
+					};
+					// backup local
+					localStorage.setItem("assess_session", JSON.stringify(assess_session));
+					//refresh the page
+					window.location.reload();
+				});
 			})(i);
 		}
 
@@ -92,27 +103,30 @@
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 		$('.answer_quest').click(function() {
-			// we store the name of the attribute
-			var name = $(this).attr('id').slice(2);
-
+			// we store the name, value, and index of the attribute
+			var question_id = $(this).attr('id').slice(2).split('_'),
+				question_name = question_id[0],
+				question_val = question_id[1],
+				question_index = question_id[2];
+				
 			// we delete the slect div
 			$('#select').hide();
-			$('#attribute_name').show().html(name.toUpperCase());
+			$('#attribute_name').show().html(question_name.toUpperCase());
 
 
 			// which index is it ?
 			var indice;
-			for (var j = 0; j < asses_session.attributes.length; j++) {
-				if (asses_session.attributes[j].name == name) {
+			for (var j = 0; j < assess_session.attributes.length; j++) {
+				if (assess_session.attributes[j].name == question_name) {
 					indice = j;
 				}
 			}
 
-			var mode = asses_session.attributes[indice].mode;
-			var val_min = asses_session.attributes[indice].val_min;
-			var val_max = asses_session.attributes[indice].val_max;
-			var method = asses_session.attributes[indice].method;
-			var unit = asses_session.attributes[indice].unit;
+			var val_min = assess_session.attributes[indice].val_min,
+				val_max = assess_session.attributes[indice].val_max,
+				unit = assess_session.attributes[indice].unit,
+				method = assess_session.attributes[indice].method,
+				mode = assess_session.attributes[indice].mode;
 
 			function random_proba(proba1, proba2) {
 				var coin = Math.round(Math.random());
@@ -132,34 +146,22 @@
 					// VARIABLES
 					var probability = 0.75,
 						min_interval = 0,
-						max_interval = 1;
+						max_interval = 1,
+						gain_certain = parseFloat(question_val);
 
 					// INTERFACE
 					var arbre_pe = new Arbre('pe', '#trees', settings.display, "PE");
 					
-
-					// The certain gain will change whether it is the 1st, 2nd or 3rd questionnaire
-					if (asses_session.attributes[indice].questionnaire.number == 0) {
-						var gain_certain = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) / 2;
-						arbre_pe.questions_val_mean = gain_certain + ' ' + unit;
-					} else if (asses_session.attributes[indice].questionnaire.number == 1) {
-						var gain_certain = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) / 4;
-						arbre_pe.questions_val_mean = gain_certain + ' ' + unit;
-					} else if (asses_session.attributes[indice].questionnaire.number == 2) {
-						var gain_certain = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) * 3 / 4;
-						arbre_pe.questions_val_mean = gain_certain + ' ' + unit;
-					}
-
 					// SETUP ARBRE GAUCHE
 					arbre_pe.questions_proba_haut = probability;
-					
-					arbre_pe.questions_val_max = (mode=="normal"? val_max : val_min) + ' ' + unit;
-					arbre_pe.questions_val_min = (mode=="normal"? val_min : val_max) + ' ' + unit;
+					arbre_pe.questions_val_max = (mode=="Normal"? val_max : val_min) + ' ' + unit;
+					arbre_pe.questions_val_min = (mode=="Normal"? val_min : val_max) + ' ' + unit;
+					arbre_pe.questions_val_mean = gain_certain + ' ' + unit;
 					
 					arbre_pe.display();
 					arbre_pe.update();
 
-					$('#trees').append('</div><div class=choice style="text-align: center;"><p>Which option do you prefer?</p><button type="button" class="btn btn-default" id="gain">A</button><button type="button" class="btn btn-default" id="lottery">B</button></div>');
+					$('#trees').append('</div><div class=choice style="text-align: center;"><p>Which option do you prefer?</p><button type="button" class="btn btn-default" id="gain">Certain gain</button><button type="button" class="btn btn-default" id="lottery">Lottery</button></div>');
 
 					// FUNCTIONS
 					function sync_values() {
@@ -197,10 +199,10 @@
 
 							if (final_proba <= 1 && final_proba >= 0) {
 								// we save it
-								asses_session.attributes[indice].questionnaire.points.push([gain_certain, final_proba]);
-								asses_session.attributes[indice].questionnaire.number += 1;
+								assess_session.attributes[indice].questionnaire.points[String(gain_certain)]=final_proba;
+								assess_session.attributes[indice].questionnaire.number += 1;
 								// backup local
-								localStorage.setItem("asses_session", JSON.stringify(asses_session));
+								localStorage.setItem("assess_session", JSON.stringify(assess_session));
 								// we reload the page
 								window.location.reload();
 							}
@@ -250,11 +252,11 @@
 					arbre_droite.questions_proba_haut = settings.proba_le;
 
 					// The certain gain will change whether it is the 1st, 2nd or 3rd questionnaire
-					if (asses_session.attributes[indice].questionnaire.number == 0) {
+					if (assess_session.attributes[indice].questionnaire.number == 0) {
 						arbre_droite.questions_val_max = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) / 2 + ' ' + unit;
-					} else if (asses_session.attributes[indice].questionnaire.number == 1) {
+					} else if (assess_session.attributes[indice].questionnaire.number == 1) {
 						arbre_droite.questions_val_max = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) / 4 + ' ' + unit;
-					} else if (asses_session.attributes[indice].questionnaire.number == 2) {
+					} else if (assess_session.attributes[indice].questionnaire.number == 2) {
 						arbre_droite.questions_val_max = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) * 3 / 4 + ' ' + unit;
 					}
 
@@ -263,7 +265,7 @@
 					arbre_droite.update();
 
 					// we add the choice button
-					$('#trees').append('<div class=choice style="text-align: center;"><p>Which option do you prefer?</p><button type="button" class="btn btn-default lottery_a">A</button><button type="button" class="btn btn-default lottery_b">B</button></div>')
+					$('#trees').append('<div class=choice style="text-align: center;"><p>Which option do you prefer?</p><button type="button" class="btn btn-default lottery_a">Lottery A</button><button type="button" class="btn btn-default lottery_b">Lottery B</button></div>')
 
 
 					function treat_answer(data) {
@@ -296,10 +298,10 @@
 
 							if (final_proba <= 1 && final_proba >= 0) {
 								// we save it
-								asses_session.attributes[indice].questionnaire.points.push([parseFloat(arbre_droite.questions_val_max), final_proba * 2]);
-								asses_session.attributes[indice].questionnaire.number += 1;
+								assess_session.attributes[indice].questionnaire.points.push([parseFloat(arbre_droite.questions_val_max), final_proba * 2]);
+								assess_session.attributes[indice].questionnaire.number += 1;
 								// backup local
-								localStorage.setItem("asses_session", JSON.stringify(asses_session));
+								localStorage.setItem("assess_session", JSON.stringify(assess_session));
 								// we reload the page
 								window.location.reload();
 							}
@@ -332,15 +334,15 @@
 				(function() {
 
 					// VARIABLES
-					if (asses_session.attributes[indice].questionnaire.number == 0) {
+					if (assess_session.attributes[indice].questionnaire.number == 0) {
 						var min_interval = val_min;
 						var max_interval = val_max;
-					} else if (asses_session.attributes[indice].questionnaire.number == 1) {
-						var min_interval = asses_session.attributes[indice].questionnaire.points[0][0];
+					} else if (assess_session.attributes[indice].questionnaire.number == 1) {
+						var min_interval = assess_session.attributes[indice].questionnaire.points[0][0];
 						var max_interval = val_max;
-					} else if (asses_session.attributes[indice].questionnaire.number == 2) {
+					} else if (assess_session.attributes[indice].questionnaire.number == 2) {
 						var min_interval = val_min;
-						var max_interval = asses_session.attributes[indice].questionnaire.points[0][0];
+						var max_interval = assess_session.attributes[indice].questionnaire.points[0][0];
 					}
 
 					var L = [0.75 * (max_interval - min_interval) + min_interval, 0.25 * (max_interval - min_interval) + min_interval];
@@ -359,10 +361,10 @@
 					arbre_ce.update();
 
 					// we add the choice button
-					$('#trees').append('<div class=choice style="text-align: center;"><p>Which option do you prefer?</p><button type="button" class="btn btn-default" id="gain">A</button><button type="button" class="btn btn-default" id="lottery">B</button></div>')
+					$('#trees').append('<div class=choice style="text-align: center;"><p>Which option do you prefer?</p><button type="button" class="btn btn-default" id="gain">Certain gain</button><button type="button" class="btn btn-default" id="lottery">Lottery</button></div>')
 
 					function utility_finder(gain) {
-						var points = asses_session.attributes[indice].questionnaire.points;
+						var points = assess_session.attributes[indice].questionnaire.points;
 						if (gain == val_min) {
 							if (mode == 'normal') {
 								return 0;
@@ -419,10 +421,10 @@
 							console.log(utility_finder(parseFloat(arbre_ce.questions_val_min)));
 							if (final_gain <= max_interval && final_gain >= min_interval) {
 								// we save it
-								asses_session.attributes[indice].questionnaire.points.push([final_gain, final_utility]);
-								asses_session.attributes[indice].questionnaire.number += 1;
+								assess_session.attributes[indice].questionnaire.points.push([final_gain, final_utility]);
+								assess_session.attributes[indice].questionnaire.number += 1;
 								// backup local
-								localStorage.setItem("asses_session", JSON.stringify(asses_session));
+								localStorage.setItem("assess_session", JSON.stringify(assess_session));
 								// we reload the page
 								window.location.reload();
 							}
@@ -455,17 +457,17 @@
 				(function() {
 
 					// VARIABLES
-					if (asses_session.attributes[indice].questionnaire.number == 0) {
+					if (assess_session.attributes[indice].questionnaire.number == 0) {
 						var min_interval = val_min;
 						var max_interval = val_max;
 						p = 0.5;
-					} else if (asses_session.attributes[indice].questionnaire.number == 1) {
-						var min_interval = asses_session.attributes[indice].questionnaire.points[0][0];
+					} else if (assess_session.attributes[indice].questionnaire.number == 1) {
+						var min_interval = assess_session.attributes[indice].questionnaire.points[0][0];
 						var max_interval = val_max;
 						p = 0.25;
-					} else if (asses_session.attributes[indice].questionnaire.number == 2) {
+					} else if (assess_session.attributes[indice].questionnaire.number == 2) {
 						var min_interval = val_min;
-						var max_interval = asses_session.attributes[indice].questionnaire.points[0][0];
+						var max_interval = assess_session.attributes[indice].questionnaire.points[0][0];
 						p = 0.75;
 					}
 
@@ -485,10 +487,10 @@
 					arbre_cepv.update();
 
 					// we add the choice button
-					$('#trees').append('<button type="button" class="btn btn-default" id="gain">Gain with certainty</button><button type="button" class="btn btn-default" id="lottery">Lottery</button>')
+					$('#trees').append('<button type="button" class="btn btn-default" id="gain">Certain gain</button><button type="button" class="btn btn-default" id="lottery">Lottery</button>')
 
 					function utility_finder(gain) {
-						var points = asses_session.attributes[indice].questionnaire.points;
+						var points = assess_session.attributes[indice].questionnaire.points;
 						if (gain == val_min) {
 							if (mode == 'normal') {
 								return 0;
@@ -546,10 +548,10 @@
 							console.log(utility_finder(parseFloat(arbre_cepv.questions_val_min)));
 							if (final_gain <= max_interval && final_gain >= min_interval) {
 								// we save it
-								asses_session.attributes[indice].questionnaire.points.push([final_gain, final_utility]);
-								asses_session.attributes[indice].questionnaire.number += 1;
+								assess_session.attributes[indice].questionnaire.points.push([final_gain, final_utility]);
+								assess_session.attributes[indice].questionnaire.number += 1;
 								// backup local
-								localStorage.setItem("asses_session", JSON.stringify(asses_session));
+								localStorage.setItem("assess_session", JSON.stringify(assess_session));
 								// we reload the page
 								window.location.reload();
 							}
@@ -589,16 +591,16 @@
 
 			// which index is it ?
 			var indice;
-			for (var j = 0; j < asses_session.attributes.length; j++) {
-				if (asses_session.attributes[j].name == name) {
+			for (var j = 0; j < assess_session.attributes.length; j++) {
+				if (assess_session.attributes[j].name == name) {
 					indice = j;
 				}
 			}
 
-			var val_min = asses_session.attributes[indice].val_min;
-			var val_max = asses_session.attributes[indice].val_max;
-			var mode = asses_session.attributes[indice].mode;
-			var points = asses_session.attributes[indice].questionnaire.points.slice();
+			var val_min = assess_session.attributes[indice].val_min;
+			var val_max = assess_session.attributes[indice].val_max;
+			var mode = assess_session.attributes[indice].mode;
+			var points = assess_session.attributes[indice].questionnaire.points.slice();
 
 			if (mode == "normal") {
 				points.push([val_max, 1]);

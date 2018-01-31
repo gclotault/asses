@@ -6,6 +6,7 @@
 		<thead>
 			<tr>
 				<th>Attribute</th>
+				<th>Type</th>
 				<th>Method</th>
 				<th>Number of assessed points</th>
 				<th>Assess another point</th>
@@ -40,18 +41,10 @@
 		$('#main_graph').hide();
 		$('#functions').hide();
 
-		var assess_session_QUALI = JSON.parse(localStorage.getItem("assess_session_QUALI"));
-		var settings=assess_session_QUALI.settings;
-		
-		// function isInList(item, test_list) { // only works when item can be found in the first position of a table in test_list
-			// for (var ii=0, leng = test_list.length; ii<leng; ii++) {
-				// if(item==test_list[ii][0]){return true};
-			// };
-			// return false;			
-		// };
-		
-		
-		// We fill the table
+		var assess_session_QUALI = JSON.parse(localStorage.getItem("assess_session_QUALI")),
+			settings=assess_session_QUALI.settings;
+				
+		// We fill the table of the existing attributes and assessments
 		for (var i = 0; i < assess_session_QUALI.attributes.length; i++) {
 			var attribute = assess_session_QUALI.attributes[i];
 			
@@ -59,6 +52,7 @@
 				continue; //we skip this attribute and go to the next one
 			
 			var text_table = '<tr><td>' + attribute.name + '</td>'+
+							'<td>' + attribute.type + '</td>'+
 							'<td>' + attribute.method + '</td>'+
 							'<td>' + attribute.questionnaire.number + '</td>';
 							
@@ -85,20 +79,20 @@
 			$('#table_attributes').append(text_table);
 
 			(function(_i) {
-					$('#deleteK' + _i).click(function() {
-							if (confirm("Are you sure ?") == false) {
-									return
-							};
-							assess_session_QUALI.attributes[_i].questionnaire = {
-									'number': 0,
-									'points': {},
-									'utility': {}
-							};
-							// backup local
-							localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
-							//refresh the page
-							window.location.reload();
-					});
+				$('#deleteK' + _i).click(function() {
+					if (confirm("Are you sure you want to delete all the assessments for "+assess_session_QUALI.attributes[_i].name+"?") == false) {
+						return
+					};
+					assess_session_QUALI.attributes[_i].questionnaire = {
+						'number': 0,
+						'points': {},
+						'utility': {}
+					};
+					// backup local
+					localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
+					//refresh the page
+					window.location.reload();
+				});
 			})(i);
 		}
 
@@ -172,8 +166,8 @@
 
 					$('#trees').append('</div><div class=choice style="text-align: center;">'+
 										'<p>Which option do you prefer?</p>'+
-										'<button type="button" class="btn btn-default" id="gain"> A </button>'+
-										'<button type="button" class="btn btn-default" id="lottery"> B </button></div>');
+										'<button type="button" class="btn btn-default" id="gain"> Certain gain </button>'+
+										'<button type="button" class="btn btn-default" id="lottery"> Lottery </button></div>');
 
 					// FUNCTIONS
 					function sync_values() {

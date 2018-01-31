@@ -48,10 +48,10 @@
         $("#settings_modified").hide();
 		$('li.settings').addClass("active");
 
-        var asses_session = JSON.parse(localStorage.getItem("asses_session"));
+        var assess_session = JSON.parse(localStorage.getItem("assess_session"));
 
-        if (!asses_session) {
-            asses_session = {
+        if (!assess_session) {
+            assess_session = {
                 "attributes": [],
                 "k_calculus": [{
                     "method": "multiplicative",
@@ -75,10 +75,10 @@
                     "display": "trees"
                 }
             };
-            localStorage.setItem("asses_session", JSON.stringify(asses_session));
+            localStorage.setItem("assess_session", JSON.stringify(assess_session));
         }
 
-        var settings = asses_session.settings;
+        var settings = assess_session.settings;
 
         $("#decimals_equations").val(settings.decimals_equations);
         $("#decimals_dpl").val(settings.decimals_dpl);
@@ -98,7 +98,7 @@
             settings.language = language.val();
             var display = $("input[type='radio'][name='display']:checked");
             settings.display = display.val();
-            localStorage.setItem("asses_session", JSON.stringify(asses_session));
+            localStorage.setItem("assess_session", JSON.stringify(assess_session));
             $("#settings_modified").fadeIn();
         });
     });
