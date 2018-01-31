@@ -9,7 +9,7 @@ $(function() {
 
 	$('li.export').addClass("active");
 	$('#export_json').click(function() {
-		var data_2_export = localStorage['asses_session'];
+		var data_2_export = localStorage['assess_session'];
 		var button  = $('#export_json');
 		button.attr('href', 'data:attachment/json,' + data_2_export);
 		button.attr('target', '_blank');
@@ -17,7 +17,7 @@ $(function() {
 	});
 
 	$('#export_xls').click(function() {
-		var data_2_export = localStorage['asses_session'];
+		var data_2_export = localStorage['assess_session'];
 		$.post('ajax', '{"type":"export_xlsx", "data":'+data_2_export+'}', function(data) {
 			document.location = "export_download/"+data;
 		});
@@ -47,13 +47,13 @@ function signe(nombre){if(nombre>=0){return "+"+nombre}else{return nombre}};
 
 function list()
 {
-	var asses_session = JSON.parse(localStorage.getItem("asses_session"));
+	var assess_session = JSON.parse(localStorage.getItem("assess_session"));
 
 	// We fill the table
-	for (var i=0; i < asses_session.attributes.length; i++){
+	for (var i=0; i < assess_session.attributes.length; i++){
 
-		var text = '<tr><td>' + asses_session.attributes[i].name + '</td>';
-		text+='<td>'+ asses_session.attributes[i].unit + '</td>';
+		var text = '<tr><td>' + assess_session.attributes[i].name + '</td>';
+		text+='<td>'+ assess_session.attributes[i].unit + '</td>';
 		text+='<td id="charts_'+i+'"></td>';
 		text+='<td id="functions_'+i+'"></td>';
 		text+='</tr>';
@@ -62,11 +62,11 @@ function list()
 
 		(function(_i) {
 			var json_2_send = {"type": "calc_util", "points":[]};
-			var points = asses_session.attributes[_i].questionnaire.points.slice();
-			var mode = asses_session.attributes[_i].mode;
-			var val_max=asses_session.attributes[_i].val_max;
-			var val_min=asses_session.attributes[_i].val_min;
-			if (points.length > 0 && asses_session.attributes[i].checked) {
+			var points = assess_session.attributes[_i].questionnaire.points.slice();
+			var mode = assess_session.attributes[_i].mode;
+			var val_max=assess_session.attributes[_i].val_max;
+			var val_min=assess_session.attributes[_i].val_min;
+			if (points.length > 0 && assess_session.attributes[i].checked) {
 			if (mode=="normal") {
 				points.push([val_max, 1]);
 				points.push([val_min, 0]);
@@ -129,9 +129,9 @@ function list()
 			}
 			else
 			{
-				if(points.length == 0 && asses_session.attributes[i].checked)
+				if(points.length == 0 && assess_session.attributes[i].checked)
 				$('#charts_' + _i).append("Please answer questionnaire");
-				else if(!asses_session.attributes[i].checked)
+				else if(!assess_session.attributes[i].checked)
 				$('#charts_' + _i).append("The attribute is inactive");
 
 				$('#functions_' + _i).append('<input type="checkbox" id="checkbox_'+_i+'_0"> Add just the attribute');
@@ -179,8 +179,8 @@ function update_data_export_option(i, type, data)
 	}
 	else //we are going to add the good one.
 	{
-		var asses_session = JSON.parse(localStorage.getItem("asses_session"));
-		myAttribut=asses_session.attributes[i];
+		var assess_session = JSON.parse(localStorage.getItem("assess_session"));
+		myAttribut=assess_session.attributes[i];
 		myAttribut.indice=i;
 		if (data!=null)
 		myAttribut.utilities=[data];
@@ -197,8 +197,8 @@ function checkbox_multiplicative()
 	var checked=$('#checkbox_multiplicative').is(":checked");
 	if(checked)
 	{
-		var asses_session = JSON.parse(localStorage.getItem("asses_session"));
-		data_export_option['k_calculus'].push(asses_session['k_calculus'][0]);
+		var assess_session = JSON.parse(localStorage.getItem("assess_session"));
+		data_export_option['k_calculus'].push(assess_session['k_calculus'][0]);
 	}
 	else {
 		for (var l = 0; l < data_export_option['k_calculus'].length; l++) {
@@ -215,8 +215,8 @@ function checkbox_multilinear()
 	var checked=$('#checkbox_multilinear').is(":checked");
 	if(checked)
 	{
-		var asses_session = JSON.parse(localStorage.getItem("asses_session"));
-		data_export_option['k_calculus'].push(asses_session['k_calculus'][1]);
+		var assess_session = JSON.parse(localStorage.getItem("assess_session"));
+		data_export_option['k_calculus'].push(assess_session['k_calculus'][1]);
 	}
 	else {
 		for (var l = 0; l < data_export_option['k_calculus'].length; l++) {
