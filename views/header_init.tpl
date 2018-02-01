@@ -10,7 +10,7 @@
     <meta name="author" content="">
 	
 
-    <title>ASSESS ONLINE</title>
+    <title>ASSESS</title>
 
     <!-- Bootstrap Core CSS -->
     <link href="{{ get_url('static', path='css/bootstrap.min.css') }}" rel="stylesheet">
@@ -48,7 +48,7 @@
                     <span class="icon-bar"></span>
                     <span class="icon-bar"></span>
                 </button>
-                <a class="navbar-brand" href="/attributes">ASSESS ONLINE</a>
+                <a class="navbar-brand" href="/attributes">ASSESS</a>
             </div>
             <!-- Top Menu Items -->
 
