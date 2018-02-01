@@ -41,14 +41,14 @@
 		$('#main_graph').hide();
 		$('#functions').hide();
 
-		var assess_session_QUALI = JSON.parse(localStorage.getItem("assess_session_QUALI")),
-			settings=assess_session_QUALI.settings;
+		var assess_session = JSON.parse(localStorage.getItem("assess_session")),
+			settings=assess_session.settings;
 				
 		// We fill the table of the existing attributes and assessments
-		for (var i = 0; i < assess_session_QUALI.attributes.length; i++) {
-			var attribute = assess_session_QUALI.attributes[i];
+		for (var i = 0; i < assess_session.attributes.length; i++) {
+			var attribute = assess_session.attributes[i];
 			
-			if (!assess_session_QUALI.attributes[i].checked) //if this attribute is not activated
+			if (!assess_session.attributes[i].checked) //if this attribute is not activated
 				continue; //we skip this attribute and go to the next one
 			
 			var text_table = '<tr><td>' + attribute.name + '</td>'+
@@ -57,16 +57,16 @@
 							'<td>' + attribute.questionnaire.number + '</td>';
 							
 				
-			text_table += '<td><ul><li>' + attribute.val_worst + ' : 0</li>';
+			text_table += '<td><table style="width:100%"><tr><td>' + attribute.val_min + '</td><td> : </td><td>0</td></tr>';
 			for (var ii=0, len=attribute.val_med.length; ii<len; ii++){
-				text_table += '<li>' + attribute.val_med[ii] + ' : '; 
+				text_table += '<tr><td>' + attribute.val_med[ii] + '</td><td> : </td>'; 
 				if(attribute.questionnaire.points[attribute.val_med[ii]]){
-					text_table += attribute.questionnaire.points[attribute.val_med[ii]];
+					text_table += '<td>' + attribute.questionnaire.points[attribute.val_med[ii]] + '</td>';
 				} else {
-					text_table += '<button type="button" class="btn btn-default btn-xs answer_quest" id="q_' + attribute.name + '_' + attribute.val_med[ii] + '_' + ii + '">Assess</button>' + '</li>';
+					text_table += '<td><button type="button" class="btn btn-default btn-xs answer_quest" id="q_' + attribute.name + '_' + attribute.val_med[ii] + '_' + ii + '">Assess</button>' + '</td></tr>';
 				};
 			}; 
-			text_table += '<li>' + attribute.val_best + ' : 1</li></ul></td>';
+			text_table += '<tr><td>' + attribute.val_max + '</td><td> : </td><td>1</td></tr></table></td>';
 
 			if (attribute.questionnaire.number === attribute.val_med.length) {
 				text_table += '<td><button type="button" class="btn btn-default btn-xs calc_util" id="u_' + attribute.name + '">Utility function</button></td>';
@@ -80,16 +80,16 @@
 
 			(function(_i) {
 				$('#deleteK' + _i).click(function() {
-					if (confirm("Are you sure you want to delete all the assessments for "+assess_session_QUALI.attributes[_i].name+"?") == false) {
+					if (confirm("Are you sure you want to delete all the assessments for "+assess_session.attributes[_i].name+"?") == false) {
 						return
 					};
-					assess_session_QUALI.attributes[_i].questionnaire = {
+					assess_session.attributes[_i].questionnaire = {
 						'number': 0,
 						'points': {},
 						'utility': {}
 					};
 					// backup local
-					localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
+					localStorage.setItem("assess_session", JSON.stringify(assess_session));
 					//refresh the page
 					window.location.reload();
 				});
@@ -101,7 +101,7 @@
 		///////////////////////////////////////////////////////////////// CLICK ON THE ANSWER BUTTON ////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		$('.answer_quest').click(function() {
+		$('.answer_quest_quali').click(function() {
 			// we store the name of the attribute
 			var question_id = $(this).attr('id').slice(2).split('_'),
 				question_name = question_id[0],
@@ -115,26 +115,17 @@
 
 			// which index is it ? / which attribute is it ?
 			var indice;
-			for (var j = 0; j < assess_session_QUALI.attributes.length; j++) {
-				if (assess_session_QUALI.attributes[j].name == question_name) {
+			for (var j = 0; j < assess_session.attributes.length; j++) {
+				if (assess_session.attributes[j].name == question_name) {
 					indice = j;
 				}
 			}
 
-			var val_worst = assess_session_QUALI.attributes[indice].val_worst,
-				val_med = assess_session_QUALI.attributes[indice].val_med,
-				val_best = assess_session_QUALI.attributes[indice].val_best,
-				method = assess_session_QUALI.attributes[indice].method;
+			var val_min = assess_session.attributes[indice].val_min,
+				val_max = assess_session.attributes[indice].val_max,
+				method = assess_session.attributes[indice].method;
 
-			function random_proba(proba1, proba2) {
-				var coin = Math.round(Math.random());
-				if (coin == 1) {
-					return proba1;
-				} else {
-					return proba2;
-				}
-			}
-
+		
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 			///////////////////////////////////////////////////////////////// PE METHOD ////////////////////////////////////////////////////////////////
 			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,16 +141,14 @@
 					var arbre_pe = new Arbre('pe', '#trees', settings.display, "PE");
 					
 
-					// The certain gain is the clicked med_value
-					var gain_certain = question_val;
-					
-					arbre_pe.questions_val_mean = gain_certain;
+					// The certain gain is the clicked med_value					
+					arbre_pe.questions_val_mean = question_val;
 					
 					// SETUP ARBRE GAUCHE
 					arbre_pe.questions_proba_haut = probability;
 					
-					arbre_pe.questions_val_max = val_best;
-					arbre_pe.questions_val_min = val_worst;
+					arbre_pe.questions_val_max = val_max;
+					arbre_pe.questions_val_min = val_min;
 					
 					arbre_pe.display();
 					arbre_pe.update();
@@ -206,12 +195,11 @@
 
 							if (final_proba <= 1 && final_proba >= 0) {
 								// we save it
-								assess_session_QUALI.attributes[indice].questionnaire.points[gain_certain]=final_proba;
-								assess_session_QUALI.attributes[indice].questionnaire.number += 1;
-								// backup local
-								localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
-								// we reload the page
-								window.location.reload();
+								assess_session.attributes[indice].questionnaire.points[question_val]=final_proba;
+								assess_session.attributes[indice].questionnaire.number += 1;
+								
+								localStorage.setItem("assess_session", JSON.stringify(assess_session)); // backup local
+								window.location.reload(); // we reload the page
 							}
 						});
 					}
@@ -255,7 +243,7 @@
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////// CLICK ON THE UTILITY BUTTON ////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		$('.calc_util').click(function() {
+		$('.calc_util_quali').click(function() {
 			// we store the name of the attribute
 			var utility_name = $(this).attr('id').slice(2);
 			
@@ -265,21 +253,21 @@
 
 			// which index is it ?
 			var indice;
-			for (var j = 0; j < assess_session_QUALI.attributes.length; j++) {
-				if (assess_session_QUALI.attributes[j].name == utility_name) {
+			for (var j = 0; j < assess_session.attributes.length; j++) {
+				if (assess_session.attributes[j].name == utility_name) {
 					indice = j;
 				}
 			}
 
-			var val_worst = assess_session_QUALI.attributes[indice].val_worst,
-				val_best = assess_session_QUALI.attributes[indice].val_best,
-				val_med = assess_session_QUALI.attributes[indice].val_med,
-				list_names = [].concat(val_worst, val_med, val_best),
-				points = assess_session_QUALI.attributes[indice].questionnaire.points,
+			var val_min = assess_session.attributes[indice].val_min,
+				val_max = assess_session.attributes[indice].val_max,
+				val_med = assess_session.attributes[indice].val_med,
+				list_names = [].concat(val_min, val_med, val_max),
+				points = assess_session.attributes[indice].questionnaire.points,
 				list_points = [];
 
-			points[val_worst] = 0; //On force l'utilité de la pire à 0
-			points[val_best] = 1; //On force l'utilité de la meilleure à 1
+			points[val_min] = 0; //On force l'utilité de la pire à 0
+			points[val_max] = 1; //On force l'utilité de la meilleure à 1
 			
 			for (var ii=0, len=list_names.length; ii<len; ii++) {
 				list_points.push(points[list_names[ii]]);
@@ -302,6 +290,8 @@
 			addGraph(list_points, list_names);
 			
 		});
+		
+		
 	});
 </script>
 

@@ -60,22 +60,47 @@
 							 '<td>' + attribute.method + '</td>'+
 							 '<td>' + attribute.questionnaire.number + '</td>';
 							
-			text_table += '<td><table style="width:100%"><tr><td>' + attribute.val_min + '</td><td> : </td><td>0</td></tr>';
-			for (var ii=0, len=attribute.val_med.length; ii<len; ii++){
-				text_table += '<tr><td>' + attribute.val_med[ii] + '</td><td> : </td>'; 
-				if(attribute.questionnaire.points[attribute.val_med[ii]]){
-					text_table += '<td>' + attribute.questionnaire.points[attribute.val_med[ii]] + '</td>';
-				} else {
-					text_table += '<td><button type="button" class="btn btn-default btn-xs answer_quest" id="q_' + attribute.name + '_' + attribute.val_med[ii] + '_' + ii + '">Assess</button>' + '</td></tr>';
+			text_table += '<td><table style="width:100%"><tr><td>' + attribute.val_min + '</td><td> : </td><td>'+(attribute.mode=="Normal"?0:1)+'</td></tr>';
+			
+			if (attribute.method == "PE" || attribute.method == "LE"){
+				for (var ii=0, len=attribute.val_med.length; ii<len; ii++){
+					text_table += '<tr><td>' + attribute.val_med[ii] + '</td><td> : </td>';
+
+					if(attribute.questionnaire.points[attribute.val_med[ii]]){
+						text_table += '<td>' + attribute.questionnaire.points[attribute.val_med[ii]] + '</td>';
+					} else {
+						text_table += '<td><button type="button" class="btn btn-default btn-xs answer_quest_'+(attribute.type=="Qualitative"?"quali":"quanti")+'" id="q_' + attribute.name + '_' + attribute.val_med[ii] + '_' + ii + '">Assess</button>' + '</td></tr>';
+					};
+				};
+			} else {
+				for (var key in attribute.questionnaire.points){
+					text_table += '<tr><td>' + key + '</td><td> : </td>'+
+								  '<td>' + attribute.questionnaire.points[key] + '</td></tr>';
+				};
+				
+				for (var ii=Object.keys(attribute.questionnaire.points).length; ii<3; ii++){
+					text_table += '<tr><td>-</td><td> : </td>'+
+								  '<td><button type="button" class="btn btn-default btn-xs answer_quest_'+(attribute.type=="Qualitative"?"quali":"quanti")+'" id="q_' + attribute.name + '_' + ii + '_' + ii + '">Assess</button>' + '</td></tr>';
 				};
 			}; 
-			text_table += '<tr><td>' + attribute.val_max + '</td><td> : </td><td>1</td></tr></table></td>';
+			
+			text_table += '<tr><td>' + attribute.val_max + '</td><td> : </td><td>'+(attribute.mode=="Normal"?1:0)+'</td></tr></table></td>';
 
-			if (attribute.questionnaire.number > 0) {
-				text_table += '<td><button type="button" class="btn btn-default btn-xs calc_util" id="u_' + attribute.name + '">Utility function</button></td><td><button type="button" id="deleteK' + i + '" class="btn btn-default btn-xs">Reset</button></td>';
+			if (attribute.type=="Quantitative") {
+				if (attribute.questionnaire.number > 0) {
+					text_table += '<td><button type="button" class="btn btn-default btn-xs calc_util_quanti" id="u_' + attribute.name + '">Utility function</button></td>';
+				} else {
+					text_table += '<td>No assessment yet</td>';
+				};
 			} else {
-				text_table += '<td>No assessment yet</td>';
-			}
+				if (attribute.questionnaire.number === attribute.val_med.length) {
+					text_table += '<td><button type="button" class="btn btn-default btn-xs calc_util_quali" id="u_' + attribute.name + '">Utility graph</button></td>';
+				} else {
+					text_table += '<td>Please assess all the medium values</td>';
+				};
+			};
+			
+			text_table += '<td><button type="button" id="deleteK' + i + '" class="btn btn-default btn-xs">Reset</button></td>';
 
 			$('#table_attributes').append(text_table);
 
@@ -102,7 +127,8 @@
 		///////////////////////////////////////////////////////////////// CLICK ON THE ANSWER BUTTON ////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		$('.answer_quest').click(function() {
+		/// When you click on a QUANTITATIVE attribute for assessment
+		$('.answer_quest_quanti').click(function() {
 			// we store the name, value, and index of the attribute
 			var question_id = $(this).attr('id').slice(2).split('_'),
 				question_name = question_id[0],
@@ -252,14 +278,7 @@
 					arbre_droite.questions_proba_haut = settings.proba_le;
 
 					// The certain gain will change whether it is the 1st, 2nd or 3rd questionnaire
-					if (assess_session.attributes[indice].questionnaire.number == 0) {
-						arbre_droite.questions_val_max = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) / 2 + ' ' + unit;
-					} else if (assess_session.attributes[indice].questionnaire.number == 1) {
-						arbre_droite.questions_val_max = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) / 4 + ' ' + unit;
-					} else if (assess_session.attributes[indice].questionnaire.number == 2) {
-						arbre_droite.questions_val_max = parseFloat(val_min) + (parseFloat(val_max) - parseFloat(val_min)) * 3 / 4 + ' ' + unit;
-					}
-
+					arbre_droite.questions_val_max = parseFloat(question_val) + ' ' + unit;
 					arbre_droite.questions_val_min = val_min + ' ' + unit;
 					arbre_droite.display();
 					arbre_droite.update();
@@ -298,7 +317,7 @@
 
 							if (final_proba <= 1 && final_proba >= 0) {
 								// we save it
-								assess_session.attributes[indice].questionnaire.points.push([parseFloat(arbre_droite.questions_val_max), final_proba * 2]);
+								assess_session.attributes[indice].questionnaire.points[question_val] = final_proba*2;
 								assess_session.attributes[indice].questionnaire.number += 1;
 								// backup local
 								localStorage.setItem("assess_session", JSON.stringify(assess_session));
@@ -334,17 +353,9 @@
 				(function() {
 
 					// VARIABLES
-					if (assess_session.attributes[indice].questionnaire.number == 0) {
-						var min_interval = val_min;
-						var max_interval = val_max;
-					} else if (assess_session.attributes[indice].questionnaire.number == 1) {
-						var min_interval = assess_session.attributes[indice].questionnaire.points[0][0];
-						var max_interval = val_max;
-					} else if (assess_session.attributes[indice].questionnaire.number == 2) {
-						var min_interval = val_min;
-						var max_interval = assess_session.attributes[indice].questionnaire.points[0][0];
-					}
-
+					var min_interval = (assess_session.attributes[indice].questionnaire.number==2 ? parseFloat(Object.keys(assess_session.attributes[indice].questionnaire.points)[0]) : parseFloat(val_min)),  
+						max_interval = (assess_session.attributes[indice].questionnaire.number==1 ? parseFloat(Object.keys(assess_session.attributes[indice].questionnaire.points)[0]) : parseFloat(val_max)); 
+					
 					var L = [0.75 * (max_interval - min_interval) + min_interval, 0.25 * (max_interval - min_interval) + min_interval];
 					var gain = Math.round(random_proba(L[0], L[1]));
 
@@ -354,9 +365,9 @@
 
 					// SETUP ARBRE GAUCHE
 					arbre_ce.questions_proba_haut = settings.proba_ce;
-					arbre_ce.questions_val_max = max_interval + ' ' + unit;
-					arbre_ce.questions_val_min = min_interval + ' ' + unit;
-					arbre_ce.questions_val_mean = gain + ' ' + unit;
+					arbre_ce.questions_val_max = String(max_interval) + ' ' + unit;
+					arbre_ce.questions_val_min = String(min_interval) + ' ' + unit;
+					arbre_ce.questions_val_mean = String(gain) + ' ' + unit;
 					arbre_ce.display();
 					arbre_ce.update();
 
@@ -366,25 +377,17 @@
 					function utility_finder(gain) {
 						var points = assess_session.attributes[indice].questionnaire.points;
 						if (gain == val_min) {
-							if (mode == 'normal') {
-								return 0;
-							} else {
-								return 1;
-							}
+							return (mode == 'Normal' ? 0 : 1);
 						} else if (gain == val_max) {
-							if (mode == 'normal') {
-								return 1;
-							} else {
-								return 0;
-							}
+							return (mode == 'Normal' ? 1 : 0);
 						} else {
-							for (var i = 0; i < points.length; i++) {
-								if (points[i][0] == gain) {
-									return points[i][1];
+							for (var key in assess_session.attributes[indice].questionnaire.points) {
+								if (gain == key) {
+									return assess_session.attributes[indice].questionnaire.points[key];
 								}
-							}
-						}
-					}
+							};
+						};
+					};
 
 					function treat_answer(data) {
 						min_interval = data.interval[0];
@@ -421,7 +424,7 @@
 							console.log(utility_finder(parseFloat(arbre_ce.questions_val_min)));
 							if (final_gain <= max_interval && final_gain >= min_interval) {
 								// we save it
-								assess_session.attributes[indice].questionnaire.points.push([final_gain, final_utility]);
+								assess_session.attributes[indice].questionnaire.points[String(final_gain)]=parseFloat(final_utility);
 								assess_session.attributes[indice].questionnaire.number += 1;
 								// backup local
 								localStorage.setItem("assess_session", JSON.stringify(assess_session));
@@ -578,12 +581,149 @@
 			}
 		});
 
+		/// When you click on a QUALITATIVE attribute for assessment
+		$('.answer_quest_quali').click(function() {
+			// we store the name of the attribute
+			var question_id = $(this).attr('id').slice(2).split('_'),
+				question_name = question_id[0],
+				question_val = question_id[1],
+				question_index = question_id[2];
+			
+			// we delete the select div
+			$('#select').hide();
+			$('#attribute_name').show().html(question_name.toUpperCase());
+
+
+			// which index is it ? / which attribute is it ?
+			var indice;
+			for (var j = 0; j < assess_session.attributes.length; j++) {
+				if (assess_session.attributes[j].name == question_name) {
+					indice = j;
+				}
+			}
+
+			var val_min = assess_session.attributes[indice].val_min,
+				val_max = assess_session.attributes[indice].val_max,
+				method = assess_session.attributes[indice].method;
+
+		
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+			///////////////////////////////////////////////////////////////// PE METHOD ////////////////////////////////////////////////////////////////
+			//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			if (method == 'PE') {
+				(function() {
+					// VARIABLES
+					var probability = 0.75,
+						min_interval = 0,
+						max_interval = 1;
+
+					// INTERFACE
+					var arbre_pe = new Arbre('pe', '#trees', settings.display, "PE");
+					
+
+					// The certain gain is the clicked med_value					
+					arbre_pe.questions_val_mean = question_val;
+					
+					// SETUP ARBRE GAUCHE
+					arbre_pe.questions_proba_haut = probability;
+					
+					arbre_pe.questions_val_max = val_max;
+					arbre_pe.questions_val_min = val_min;
+					
+					arbre_pe.display();
+					arbre_pe.update();
+
+					$('#trees').append('</div><div class=choice style="text-align: center;">'+
+										'<p>Which option do you prefer?</p>'+
+										'<button type="button" class="btn btn-default" id="gain"> Certain gain </button>'+
+										'<button type="button" class="btn btn-default" id="lottery"> Lottery </button></div>');
+
+					// FUNCTIONS
+					function sync_values() {
+						arbre_pe.questions_proba_haut = probability;
+						arbre_pe.update();
+					}
+
+					function treat_answer(data) {
+						min_interval = data.interval[0];
+						max_interval = data.interval[1];
+						probability = parseFloat(data.proba).toFixed(2);
+
+						if (max_interval - min_interval <= 0.05) {
+							sync_values();
+							ask_final_value(Math.round((max_interval + min_interval) * 100 / 2) / 100);
+						} else {
+							sync_values();
+						}
+					}
+
+					function ask_final_value(val) {
+						// we delete the choice div
+						$('.choice').hide();
+						$('.container-fluid').append(
+							'<div id= "final_value" style="text-align: center;"><br /><br />'+
+							'<p>We are almost done. Please enter the probability that makes you indifferent between the two situations above. Your previous choices indicate that it should be between ' + min_interval + ' and ' + max_interval + ' but you are not constrained to that range <br /> ' + min_interval +
+							'\
+							<= <input type="text" class="form-control" id="final_proba" placeholder="Probability" value="' + val + '" style="width: 100px; display: inline-block"> <= ' + max_interval +
+							'</p><button type="button" class="btn btn-default final_validation">Validate</button></div>'
+						);
+
+
+						// when the user validate
+						$('.final_validation').click(function() {
+							var final_proba = parseFloat($('#final_proba').val());
+
+							if (final_proba <= 1 && final_proba >= 0) {
+								// we save it
+								assess_session.attributes[indice].questionnaire.points[question_val]=final_proba;
+								assess_session.attributes[indice].questionnaire.number += 1;
+								
+								localStorage.setItem("assess_session", JSON.stringify(assess_session)); // backup local
+								window.location.reload(); // we reload the page
+							}
+						});
+					}
+
+					sync_values();
+
+					// HANDLE USERS ACTIONS
+					$('#gain').click(function() {
+						$.post('ajax', 
+							'{"type":"question",'+
+							'"method": "PE",'+
+							'"proba": ' + String(probability) + ','+
+							'"min_interval": ' + min_interval + ','+
+							'"max_interval": ' + max_interval + ','+
+							'"choice": "0",'+
+							'"mode": "normal"}',
+							function(data) {
+								treat_answer(data);
+							});
+					});
+
+					$('#lottery').click(function() {
+						$.post('ajax', 
+							'{"type":"question",'+
+							'"method": "PE",'+
+							'"proba": ' + String(probability) + ','+
+							'"min_interval": ' + min_interval + ','+
+							'"max_interval": ' + max_interval + ','+
+							'"choice": "1",'+
+							'"mode": "normal"}',
+							function(data) {
+								treat_answer(data);
+							});
+					});
+				})()
+			}
+		});
 
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		///////////////////////////////////////////////////////////////// CLICK ON THE UTILITY BUTTON ////////////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-		$('.calc_util').click(function() {
+		$('.calc_util_quanti').click(function() {
 			// we store the name of the attribute
 			var name = $(this).attr('id').slice(2);
 			// we hide the slect div
@@ -597,18 +737,19 @@
 				}
 			}
 
-			var val_min = assess_session.attributes[indice].val_min;
-			var val_max = assess_session.attributes[indice].val_max;
-			var mode = assess_session.attributes[indice].mode;
-			var points = assess_session.attributes[indice].questionnaire.points.slice();
-
-			if (mode == "normal") {
-				points.push([val_max, 1]);
-				points.push([val_min, 0]);
-			} else {
-				points.push([val_max, 0]);
-				points.push([val_min, 1]);
-			}
+			var val_min = assess_session.attributes[indice].val_min,
+				val_max = assess_session.attributes[indice].val_max,
+				mode = assess_session.attributes[indice].mode,
+				points_dict = assess_session.attributes[indice].questionnaire.points,
+				points=[];
+				
+			for (key in points_dict) {
+				points.push([parseFloat(key), parseFloat(points_dict[key])]);
+			};
+			
+			points.push([val_min, (mode == "Normal" ? 0 : 1)]);
+			points.push([val_max, (mode == "Normal" ? 1 : 0)]);
+			
 			var json_2_send = {
 				"type": "calc_util_multi"
 			};
@@ -791,6 +932,59 @@
 			});
 
 		});
+	
+		
+		/// When you click on a QUALITATIVE utility function button
+		$('.calc_util_quali').click(function() {
+			// we store the name of the attribute
+			var utility_name = $(this).attr('id').slice(2);
+			
+			// we delete the select div
+			$('#select').hide();
+			//$('#attribute_name').show().html(question_name.toUpperCase());
+
+			// which index is it ?
+			var indice;
+			for (var j = 0; j < assess_session.attributes.length; j++) {
+				if (assess_session.attributes[j].name == utility_name) {
+					indice = j;
+				}
+			}
+
+			var val_min = assess_session.attributes[indice].val_min,
+				val_max = assess_session.attributes[indice].val_max,
+				val_med = assess_session.attributes[indice].val_med,
+				list_names = [].concat(val_min, val_med, val_max),
+				points = assess_session.attributes[indice].questionnaire.points,
+				list_points = [];
+
+			points[val_min] = 0; //On force l'utilité de la pire à 0
+			points[val_max] = 1; //On force l'utilité de la meilleure à 1
+			
+			for (var ii=0, len=list_names.length; ii<len; ii++) {
+				list_points.push(points[list_names[ii]]);
+			};
+			
+			function addGraph(data_graph, names_graph) {
+				$.post('ajax', 
+					JSON.stringify({
+						"type": "svg_QUALI",
+						"data": data_graph,
+						"list_names": names_graph,
+						"width": 6
+					}), 
+				function(data2) {
+					$('#main_graph').append(data2);
+				});
+			}
+			
+			$('#main_graph').show().empty();
+			addGraph(list_points, list_names);
+			
+		});
+		
+
+	
 	});
 </script>
 <!-- Library to copy into clipboard -->

@@ -41,7 +41,7 @@
         <label for="att_value_med">Intermediary value(s):</label>
 			<input type="button" class="btn btn-default" id="add_value_med" value="Add an item"/>   
 			<input type="button" class="btn btn-default" id="del_value_med" value="Delete last item"/>
-			<ol id="list_med_values">
+			<ol id="list_med_values_quali">
 				<li class="col-auto"><input type="text" class="form-control col-auto" id="att_value_med_1" placeholder='Intermediary Value 1'/></li>
 			</ol>
     </div>
@@ -64,7 +64,7 @@
 <script>
 
 // Fonctions pour ajouter/supprimer des zones de texte pour les valeurs intermédiaires
-var list_med_values = document.getElementById('list_med_values'),
+var list_med_values = document.getElementById('list_med_values_quali'),
 	lists = list_med_values.getElementsByTagName('li'),
 	add_value_med = document.getElementById('add_value_med'),
 	del_value_med = document.getElementById('del_value_med');
@@ -89,25 +89,12 @@ del_value_med.addEventListener('click', function() {
 
 
 $(function() {
-
-	$('#edit_attribute').hide();
-
-	$('.del_simu').click(function() {
-		if (confirm("You are about to delete all the attributes and their assessments.\nAre you sure ?") == false) {
-			return
-		};
-		localStorage.removeItem("assess_session_QUALI");
-		window.location.reload();
-	});
-	
-	$('li.manage_quali').addClass("active");
-
-	var assess_session_QUALI = JSON.parse(localStorage.getItem("assess_session_QUALI"));
+	var assess_session = JSON.parse(localStorage.getItem("assess_session"));
 	var edit_mode = false;
 	var edited_attribute=0;
 
-	if (!assess_session_QUALI) {
-		assess_session_QUALI = {
+	if (!assess_session) {
+		assess_session = {
 			"attributes": [],
 			"k_calculus": [{
 				"method": "multiplicative",
@@ -131,12 +118,12 @@ $(function() {
 				"display": "trees"
 			}
 		};
-		localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
+		localStorage.setItem("assess_session", JSON.stringify(assess_session));
 	}
 
 	function isAttribute(name) {
-		for (var i = 0; i < assess_session_QUALI.attributes.length; i++) {
-			if (assess_session_QUALI.attributes[i].name == name) {
+		for (var i = 0; i < assess_session.attributes.length; i++) {
+			if (assess_session.attributes[i].name == name) {
 				return true;
 			}
 		}
@@ -166,6 +153,19 @@ $(function() {
 		return true;
 	};
 	
+	function isThereUnderscore(val_list, val_min, val_max){
+		var list_len = val_list.length;
+		for (var i=0; i<list_len; i++) {
+			if (val_list[i].search("_")!=-1){
+				return false;
+			};
+		};
+		if (val_min.search("_")!=-1 || val_max.search("_")!=-1){
+			return false;
+		};
+		return true;
+	};
+	
 	
 
 	function checked_button_clicked(element) {
@@ -173,31 +173,32 @@ $(function() {
 		var i = $(element).val();
 
 		//we modify the propriety
-		var assess_session_QUALI = JSON.parse(localStorage.getItem("assess_session_QUALI"));
-		assess_session_QUALI.attributes[i].checked = checked;
+		var assess_session = JSON.parse(localStorage.getItem("assess_session"));
+		assess_session.attributes[i].checked = checked;
 
-		//we update the assess_session_QUALI storage
-		localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
+		//we update the assess_session storage
+		localStorage.setItem("assess_session", JSON.stringify(assess_session));
 	}
 
 	function sync_table() {
 		$('#table_attributes').empty();
-		if (assess_session_QUALI) {
-			for (var i = 0; i < assess_session_QUALI.attributes.length; i++) {
-				var attribute = assess_session_QUALI.attributes[i];
+		if (assess_session) {
+			for (var i = 0; i < assess_session.attributes.length; i++) {
+				var attribute = assess_session.attributes[i];
 				
+				///
 				var text_table = "<tr>";
 				text_table += '<td><input type="checkbox" id="checkbox_' + i + '" value="' + i + '" name="' + attribute.name + '" '+(attribute.checked ? "checked" : "")+'></td>'+
 							  '<td>' + attribute.type + '</td>' +
 							  '<td>' + attribute.name + '</td>' +
 							  '<td>' + attribute.unit + '</td>' +
-							  '<td><ul><li>' + attribute.val_worst + '</li>';
+							  '<td><table><tr><td>' + attribute.val_min + '</td></tr>';
 							  
 				for (var ii=0, len=attribute.val_med.length; ii<len; ii++){
-					text_table += '<li>' + attribute.val_med[ii] + '</li>';
+					text_table += '<tr><td>' + attribute.val_med[ii] + '</td></tr>';
 				};
 					
-				text_table += '<li>' + attribute.val_best + '</li></td>'+
+				text_table += '<tr><td>' + attribute.val_max + '</td></tr></table>'+
 							  '<td>' + attribute.method + '</td>' +
 							  '<td>' + attribute.mode + '</td>';
 							  
@@ -213,12 +214,12 @@ $(function() {
 
 				(function(_i) {
 					$('#deleteK' + _i).click(function() {
-						if (confirm("You are about to delete the attribute "+assess_session_QUALI.attributes[_i].name+".\nAre you sure ?") == false) {
+						if (confirm("You are about to delete the attribute "+assess_session.attributes[_i].name+".\nAre you sure ?") == false) {
 							return
 						};
-						assess_session_QUALI.attributes.splice(_i, 1);
+						assess_session.attributes.splice(_i, 1);
 						// backup local
-						localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
+						localStorage.setItem("assess_session", JSON.stringify(assess_session));
 						//refresh the page
 						window.location.reload();
 					});
@@ -228,10 +229,10 @@ $(function() {
 					$('#edit_' + _i).click(function() {
 						edit_mode=true;
 						edited_attribute=_i;
-						var attribute_edit = assess_session_QUALI.attributes[_i];
+						var attribute_edit = assess_session.attributes[_i];
 						$('#add_attribute h2').text("Edit attribute "+attribute_edit.name);
 						$('#att_name').val(attribute_edit.name);
-						$('#att_value_worst').val(attribute_edit.val_worst);
+						$('#att_value_worst').val(attribute_edit.val_min);
 						$('#att_value_med_1').val(attribute_edit.val_med[0]);
 						
 						for (var ii=2, len=attribute_edit.val_med.length; ii<len+1; ii++) {
@@ -243,7 +244,7 @@ $(function() {
 							$('#att_value_med_'+ii).val(attribute_edit.val_med[ii-1]);
 						};
 						
-						$('#att_value_best').val(attribute_edit.val_best);
+						$('#att_value_best').val(attribute_edit.val_max);
 					});
 				})(i);
 			}
@@ -252,12 +253,12 @@ $(function() {
 	}
 	sync_table();
 
-	$('#submit').click(function() {
-		var name = $('#att_name').val(),
-			val_worst = $('#att_value_worst').val(),
+	$('#submit_quali').click(function() {
+		var name = $('#att_name_quali').val(),
+			val_min = $('#att_value_min_quali').val(),
 			nb_med_values = document.getElementById('list_med_values').getElementsByTagName('li').length,
 			val_med = [],
-			val_best = $('#att_value_best').val();
+			val_max = $('#att_value_best').val();
 			
 		for (var ii=1; ii<nb_med_values+1; ii++){
 			val_med.push($('#att_value_med_'+ii).val());
@@ -265,28 +266,30 @@ $(function() {
 
 		var method = "PE";
 		
-		if (name=="" || val_worst=="" || val_best=="") {
+		if (name=="" || val_min=="" || val_max=="") {
 			alert('Please fill correctly all the fields');
 		}
 		else if (isAttribute(name) && (edit_mode == false)) {
 			alert ("An attribute with the same name already exists");
 		} else if (isOneValueOfTheListEmpty(val_med)) {
 			alert("One of your medium values is empty");
-		} else if (val_worst==val_best) {
+		} else if (val_min==val_max) {
 			alert("The least preferred and most preferred values are the same");
-		} else if (areAllValuesDifferent(val_med, val_worst, val_best)==false) {
+		} else if (areAllValuesDifferent(val_med, val_min, val_max)==false) {
 			alert("At least one of the values is appearing more than once");
+		} else if (isThereUnderscore(val_med, val_min, val_max)==false) {
+			alert("Please don't write an underscore ( _ ) in your values.\nBut you can put spaces");
 		}
 
 		else {
 			if (edit_mode==false) {
-				assess_session_QUALI.attributes.push({
+				assess_session.attributes.push({
 					"type": "Qualitative",
 					"name": name,
 					'unit': '',
-					'val_worst': val_worst,
+					'val_min': val_min,
 					'val_med': val_med,
-					'val_best': val_best,
+					'val_max': val_max,
 					'method': method,
 					'mode': 'Normal',
 					'completed': 'False',
@@ -299,13 +302,13 @@ $(function() {
 				});
 			} else {
 				if (confirm("Are you sure you want to edit this attribute? All assessements will be deleted") == true) {
-					assess_session_QUALI.attributes[edited_attribute]={
+					assess_session.attributes[edited_attribute]={
 						"type": "Qualitative",
 						"name": name,
 						'unit': '',
-						'val_worst': val_worst,
+						'val_min': val_min,
 						'val_med': val_med,
-						'val_best': val_best,
+						'val_max': val_max,
 						'method': method,
 						'mode': 'Normal',
 						'completed': 'False',
@@ -322,7 +325,7 @@ $(function() {
 			}
 			
 			sync_table();
-			localStorage.setItem("assess_session_QUALI", JSON.stringify(assess_session_QUALI));
+			localStorage.setItem("assess_session", JSON.stringify(assess_session));
 			
 			/// On vide les zones de texte
 			$('#att_name').val("");
